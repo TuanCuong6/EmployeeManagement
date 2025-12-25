@@ -1,170 +1,146 @@
-const db = require("../config/database").getConnection();
+const database = require("../config/database");
+const pool = database.getPool();
 
 class EmployeeModel {
   // Tạo nhân viên mới
-  static create(employeeData) {
-    return new Promise((resolve, reject) => {
-      const sql = `
-        INSERT INTO employees (ma_nhan_vien, ho_ten, ngay_sinh, gioi_tinh, email, dia_chi)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `;
+  static async create(employeeData) {
+    const sql = `
+      INSERT INTO employees (ma_nhan_vien, ho_ten, ngay_sinh, gioi_tinh, email, dia_chi)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
 
-      const params = [
-        employeeData.ma_nhan_vien,
-        employeeData.ho_ten,
-        employeeData.ngay_sinh,
-        employeeData.gioi_tinh,
-        employeeData.email,
-        employeeData.dia_chi,
-      ];
+    const params = [
+      employeeData.ma_nhan_vien,
+      employeeData.ho_ten,
+      employeeData.ngay_sinh,
+      employeeData.gioi_tinh,
+      employeeData.email,
+      employeeData.dia_chi,
+    ];
 
-      db.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve({ id: this.lastID, ...employeeData });
-      });
-    });
+    const result = await pool.query(sql, params);
+    return result.rows[0];
   }
 
   // Lấy danh sách nhân viên với phân trang và sắp xếp
-  static findAll({
+  static async findAll({
     page = 1,
     limit = 10,
     sortBy = "ho_ten",
     order = "ASC",
     search = "",
+    gender = "",
   }) {
-    return new Promise((resolve, reject) => {
-      const offset = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-      let whereClause = "";
-      let params = [];
+    let conditions = [];
+    let params = [];
+    let paramIndex = 1;
 
-      if (search) {
-        whereClause = `WHERE ho_ten LIKE ? OR email LIKE ? OR ma_nhan_vien LIKE ?`;
-        params = [`%${search}%`, `%${search}%`, `%${search}%`];
-      }
+    if (search) {
+      conditions.push(`(ho_ten ILIKE $${paramIndex} OR email ILIKE $${paramIndex + 1} OR ma_nhan_vien ILIKE $${paramIndex + 2})`);
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      paramIndex += 3;
+    }
 
-      // Validate sort column
-      const allowedSortColumns = [
-        "ho_ten",
-        "dia_chi",
-        "ngay_sinh",
-        "created_at",
-      ];
-      const sortColumn = allowedSortColumns.includes(sortBy)
-        ? sortBy
-        : "ho_ten";
-      const sortOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC";
+    if (gender) {
+      conditions.push(`gioi_tinh = $${paramIndex}`);
+      params.push(gender);
+      paramIndex++;
+    }
 
-      const countSQL = `SELECT COUNT(*) as total FROM employees ${whereClause}`;
-      const dataSQL = `
-        SELECT * FROM employees 
-        ${whereClause}
-        ORDER BY ${sortColumn} ${sortOrder}
-        LIMIT ? OFFSET ?
-      `;
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      db.get(countSQL, params, (err, countResult) => {
-        if (err) reject(err);
+    // Validate sort column
+    const allowedSortColumns = ["ho_ten", "dia_chi", "ngay_sinh", "created_at"];
+    const sortColumn = allowedSortColumns.includes(sortBy) ? sortBy : "ho_ten";
+    const sortOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
-        db.all(dataSQL, [...params, limit, offset], (err, rows) => {
-          if (err) reject(err);
+    const countSQL = `SELECT COUNT(*) as total FROM employees ${whereClause}`;
+    const dataSQL = `
+      SELECT * FROM employees 
+      ${whereClause}
+      ORDER BY ${sortColumn} ${sortOrder}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
 
-          resolve({
-            data: rows,
-            pagination: {
-              page: parseInt(page),
-              limit: parseInt(limit),
-              total: countResult.total,
-              totalPages: Math.ceil(countResult.total / limit),
-            },
-          });
-        });
-      });
-    });
+    const countResult = await pool.query(countSQL, params);
+    const dataResult = await pool.query(dataSQL, [...params, limit, offset]);
+
+    return {
+      data: dataResult.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(countResult.rows[0].total),
+        totalPages: Math.ceil(parseInt(countResult.rows[0].total) / limit),
+      },
+    };
   }
 
   // Tìm nhân viên theo ID
-  static findById(id) {
-    return new Promise((resolve, reject) => {
-      const sql = `SELECT * FROM employees WHERE id = ?`;
-      db.get(sql, [id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  static async findById(id) {
+    const sql = `SELECT * FROM employees WHERE id = $1`;
+    const result = await pool.query(sql, [id]);
+    return result.rows[0];
   }
 
   // Cập nhật nhân viên
-  static update(id, employeeData) {
-    return new Promise((resolve, reject) => {
-      const sql = `
-        UPDATE employees 
-        SET ho_ten = ?, ngay_sinh = ?, gioi_tinh = ?, email = ?, dia_chi = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `;
+  static async update(id, employeeData) {
+    const sql = `
+      UPDATE employees 
+      SET ho_ten = $1, ngay_sinh = $2, gioi_tinh = $3, email = $4, dia_chi = $5, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
+      RETURNING *
+    `;
 
-      const params = [
-        employeeData.ho_ten,
-        employeeData.ngay_sinh,
-        employeeData.gioi_tinh,
-        employeeData.email,
-        employeeData.dia_chi,
-        id,
-      ];
+    const params = [
+      employeeData.ho_ten,
+      employeeData.ngay_sinh,
+      employeeData.gioi_tinh,
+      employeeData.email,
+      employeeData.dia_chi,
+      id,
+    ];
 
-      db.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve({ id, ...employeeData });
-      });
-    });
+    const result = await pool.query(sql, params);
+    return result.rows[0];
   }
 
   // Xóa nhân viên
-  static delete(id) {
-    return new Promise((resolve, reject) => {
-      const sql = `DELETE FROM employees WHERE id = ?`;
-      db.run(sql, [id], function (err) {
-        if (err) reject(err);
-        else resolve({ deletedId: id, affectedRows: this.changes });
-      });
-    });
+  static async delete(id) {
+    const sql = `DELETE FROM employees WHERE id = $1`;
+    const result = await pool.query(sql, [id]);
+    return { deletedId: id, affectedRows: result.rowCount };
   }
 
   // Kiểm tra email đã tồn tại chưa
-  static findByEmail(email, excludeId = null) {
-    return new Promise((resolve, reject) => {
-      let sql = `SELECT id FROM employees WHERE email = ?`;
-      let params = [email];
+  static async findByEmail(email, excludeId = null) {
+    let sql = `SELECT id FROM employees WHERE email = $1`;
+    let params = [email];
 
-      if (excludeId) {
-        sql += ` AND id != ?`;
-        params.push(excludeId);
-      }
+    if (excludeId) {
+      sql += ` AND id != $2`;
+      params.push(excludeId);
+    }
 
-      db.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+    const result = await pool.query(sql, params);
+    return result.rows[0];
   }
 
   // Kiểm tra mã nhân viên đã tồn tại chưa
-  static findByEmployeeCode(code, excludeId = null) {
-    return new Promise((resolve, reject) => {
-      let sql = `SELECT id FROM employees WHERE ma_nhan_vien = ?`;
-      let params = [code];
+  static async findByEmployeeCode(code, excludeId = null) {
+    let sql = `SELECT id FROM employees WHERE ma_nhan_vien = $1`;
+    let params = [code];
 
-      if (excludeId) {
-        sql += ` AND id != ?`;
-        params.push(excludeId);
-      }
+    if (excludeId) {
+      sql += ` AND id != $2`;
+      params.push(excludeId);
+    }
 
-      db.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+    const result = await pool.query(sql, params);
+    return result.rows[0];
   }
 }
 

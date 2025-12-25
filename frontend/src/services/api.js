@@ -3,7 +3,7 @@ import axios from "axios";
 // Đối với development, sử dụng proxy trong package.json
 const API_URL =
   process.env.NODE_ENV === "production"
-    ? "https://your-backend-url.railway.app/api"
+    ? "https://employeemanagement-production-ccc5.up.railway.app/api"
     : "/api";
 
 const api = axios.create({

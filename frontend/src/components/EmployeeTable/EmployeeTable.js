@@ -6,6 +6,7 @@ import {
   Mail,
   MapPin,
   User,
+  ArrowUpDown,
   SortAsc,
   SortDesc,
 } from "lucide-react";
@@ -21,6 +22,17 @@ const EmployeeTable = ({
   page,
   limit,
 }) => {
+  const renderSortIcon = (column) => {
+    if (sortConfig.sortBy === column) {
+      return sortConfig.order === "ASC" ? (
+        <SortAsc className="h-4 w-4" />
+      ) : (
+        <SortDesc className="h-4 w-4" />
+      );
+    }
+    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -41,12 +53,7 @@ const EmployeeTable = ({
                 className="flex items-center space-x-1 hover:text-primary-600"
               >
                 <span>Họ và Tên</span>
-                {sortConfig.sortBy === "ho_ten" &&
-                  (sortConfig.order === "ASC" ? (
-                    <SortAsc className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  ))}
+                {renderSortIcon("ho_ten")}
               </button>
             </th>
             <th className="table-header">Mã NV</th>
@@ -60,12 +67,7 @@ const EmployeeTable = ({
                 className="flex items-center space-x-1 hover:text-primary-600"
               >
                 <span>Địa Chỉ</span>
-                {sortConfig.sortBy === "dia_chi" &&
-                  (sortConfig.order === "ASC" ? (
-                    <SortAsc className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  ))}
+                {renderSortIcon("dia_chi")}
               </button>
             </th>
             <th className="table-header">Thao Tác</th>

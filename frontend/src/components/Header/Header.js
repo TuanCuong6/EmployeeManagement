@@ -1,19 +1,21 @@
 import React from "react";
 import { UserPlus, Users } from "lucide-react";
 
-const Header = ({ onAddEmployee }) => {
+const Header = ({ onAddEmployee, totalEmployees }) => {
   return (
-    <header className="bg-white shadow-lg">
+    <header className="bg-gradient-to-r from-white via-blue-50 to-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Users className="h-8 w-8 text-primary-600" />
+            <div className="h-10 w-10 bg-gradient-to-br from-primary-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Users className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Quản Lý Nhân Viên
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-blue-600 bg-clip-text text-transparent">
+                Quản Lý Nhân Viên Vietapp
               </h1>
               <p className="text-gray-600">
-                Quản lý thông tin nhân viên công ty
+                {totalEmployees} nhân viên
               </p>
             </div>
           </div>
