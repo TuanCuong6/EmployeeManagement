@@ -32,17 +32,25 @@ class EmployeeModel {
     sortBy = "ho_ten",
     order = "ASC",
     search = "",
+    gender = "",
   }) {
     return new Promise((resolve, reject) => {
       const offset = (page - 1) * limit;
 
-      let whereClause = "";
+      let conditions = [];
       let params = [];
 
       if (search) {
-        whereClause = `WHERE ho_ten LIKE ? OR email LIKE ? OR ma_nhan_vien LIKE ?`;
-        params = [`%${search}%`, `%${search}%`, `%${search}%`];
+        conditions.push(`(ho_ten LIKE ? OR email LIKE ? OR ma_nhan_vien LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
       }
+
+      if (gender) {
+        conditions.push(`gioi_tinh = ?`);
+        params.push(gender);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
       // Validate sort column
       const allowedSortColumns = [

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header/Header";
 import SearchBar from "../components/SearchBar/SearchBar";
-import StatsCards from "../components/StatsCards/StatsCards";
 import EmployeeTable from "../components/EmployeeTable/EmployeeTable";
 import Pagination from "../components/Pagination/Pagination";
 import EmployeeForm from "../components/EmployeeForm/EmployeeForm";
@@ -28,6 +27,7 @@ const HomePage = () => {
     order: "ASC",
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
 
   // Fetch employees
   const fetchEmployees = async () => {
@@ -39,6 +39,7 @@ const HomePage = () => {
         sortBy: sortConfig.sortBy,
         order: sortConfig.order,
         search: searchTerm,
+        gender: genderFilter,
       };
 
       const response = await employeeApi.getEmployees(params);
@@ -54,7 +55,7 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [pagination.page, sortConfig, searchTerm]);
+  }, [pagination.page, sortConfig, searchTerm, genderFilter]);
 
   // Xử lý sort
   const handleSort = (column) => {
@@ -122,6 +123,7 @@ const HomePage = () => {
           setIsEditing(false);
           setShowForm(true);
         }}
+        totalEmployees={pagination.total}
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -129,9 +131,9 @@ const HomePage = () => {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onSearch={handleSearch}
+          genderFilter={genderFilter}
+          setGenderFilter={setGenderFilter}
         />
-
-        <StatsCards employees={employees} pagination={pagination} />
 
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <EmployeeTable
@@ -153,7 +155,7 @@ const HomePage = () => {
           />
 
           {!loading && employees.length > 0 && (
-            <Pination pagination={pagination} onPageChange={handlePageChange} />
+            <Pagination pagination={pagination} onPageChange={handlePageChange} />
           )}
         </div>
       </main>

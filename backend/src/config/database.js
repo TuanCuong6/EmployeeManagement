@@ -8,7 +8,7 @@ class Database {
       if (err) {
         console.error("Lỗi kết nối database:", err);
       } else {
-        console.log("✅ Kết nối SQLite thành công");
+        console.log("Kết nối SQLite thành công");
         this.initializeTables();
       }
     });
@@ -33,7 +33,7 @@ class Database {
       if (err) {
         console.error("Lỗi tạo bảng:", err);
       } else {
-        console.log("✅ Bảng employees đã sẵn sàng");
+        console.log("Bảng employees đã sẵn sàng");
         this.seedSampleData();
       }
     });
@@ -80,7 +80,7 @@ class Database {
         sampleData.forEach((data) => {
           this.db.run(insertSQL, data);
         });
-        console.log("✅ Đã thêm dữ liệu mẫu");
+        console.log("Đã thêm dữ liệu mẫu");
       }
     });
   }

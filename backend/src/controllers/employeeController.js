@@ -10,6 +10,7 @@ class EmployeeController {
         sortBy = "ho_ten",
         order = "ASC",
         search = "",
+        gender = "",
       } = req.query;
 
       const result = await EmployeeModel.findAll({
@@ -18,6 +19,7 @@ class EmployeeController {
         sortBy,
         order,
         search,
+        gender,
       });
 
       res.json({
