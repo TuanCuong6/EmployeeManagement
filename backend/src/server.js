@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const database = require("./config/database");
 const employeeRoutes = require("./routes/employeeRoutes");
 
 const app = express();
@@ -25,6 +26,10 @@ app.use("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server đang chạy trên port ${PORT}`);
+
+// Khởi tạo database rồi mới start server
+database.initializeTables().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server đang chạy trên port ${PORT}`);
+  });
 });
